@@ -1,0 +1,79 @@
+name: Website Visibility & AI Search Agent Audit
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Runs every Monday at 09:00 UTC (4:00 AM EST)
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target website URL to audit (leave empty for demo site)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  visibility_audit:
+    name: Run Multi-Agent Visibility Loop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Test Suite
+        run: |
+          pytest tests/ -v
+
+      - name: Execute Visibility Agent Loop
+        id: run_agent_loop
+        env:
+          TARGET_URL: ${{ github.event.inputs.target_url || vars.TARGET_URL || '' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          mkdir -p audit_output
+          if [ -n "$TARGET_URL" ]; then
+            echo "Auditing configured URL: $TARGET_URL"
+            python -m src.main --url "$TARGET_URL" --output-dir audit_output
+          else
+            echo "Running audit on demo sample site"
+            python -m src.main --demo --output-dir audit_output
+          fi
+
+      - name: Publish Summary to GitHub Actions Step Summary
+        if: always()
+        run: |
+          if [ -f audit_output/audit_report.md ]; then
+            echo "## 🤖 Visibility Agent Audit Results" >> $GITHUB_STEP_SUMMARY
+            cat audit_output/audit_report.md >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## 📋 Operational Action Plan" >> $GITHUB_STEP_SUMMARY
+            cat audit_output/action_plan.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Audit Deliverables & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visibility-audit-deliverables
+          path: audit_output/
+          retention-days: 30
