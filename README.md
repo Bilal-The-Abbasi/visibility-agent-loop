@@ -50,7 +50,14 @@ An autonomous 3-agent pipeline that audits website visibility across traditional
 
 ## 🚀 Quickstart
 
-### 1. Prerequisites
+### 🌐 1. Run Online (No Setup Required)
+You can trigger the multi-agent audit directly in the cloud on GitHub Actions:
+👉 **[Click Here to Test the Agent Loop Online](https://github.com/Bilal-The-Abbasi/visibility-agent-loop/actions/workflows/visibility-audit.yml)**
+1. Click **Run workflow** (top-right).
+2. (Optional) Enter any live URL in `target_url` (e.g. `https://example.com`) or leave it blank to test the demo sample.
+3. Click the green **Run workflow** button to execute the 3 agents in the cloud.
+
+### 💻 2. Local Setup
 - Python 3.9+
 
 ### 2. Activate Virtual Environment & Run Demo
